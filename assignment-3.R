@@ -5,13 +5,13 @@
 
 # 1. Download and install necessary packages
 # 2. Generate data
-# 3. Set up clustered SE
+
 # 4. Run Monte Carlo simulation
 # 5. Generate plot
 
 # 1. ---------------------------------------------------------------------------
 
-# setting up workspace
+# setting up work space
 
 rm(list=ls())
 want <- c("RColorBrewer","plm","lfe","sandwich","lmtest","multiwayvcov")
@@ -30,51 +30,59 @@ g <- c(2) # vector of numbers of clusters
 
 # try and create a loop with vector of n observations
 
-n <- c(100) # vector of number of observations
+n <- list(100, 200, 500, 10^3, 10^4) # list of number of observations
 
+obs_loop <- lapply(100, function(n) {
 
-# generate regression
-# not sure if this needs to be done within loop?
-b0 <- 1 # coefficient for intercept
-b1 <- .1 # coefficient for x1
-x1 <- rnorm(n) + rep(rnorm(g), each=n/g) # X that is correlated within clusters
-data <- data.frame(x1=x1)
+  # Generate regression
 
+  b0 <- 1 # coefficient for intercept
+  b1 <- .1 # coefficient for x1
+  x1 <- rnorm(n) + rep(rnorm(g), each=n/g) # X that is correlated within clusters
+  data <- data.frame(x1=x1)
 
-# 4. ---------------------------------------------------------------------------
+  # Monte Carlo simulation
 
-# Monte Carlo simulation
+  out <- lapply(1:r, function(i) {
 
-out <- lapply(1:r, function(i) {
+    print(i)
+    n<-100
+    # Generate data
+    e1 <- rnorm(n) # variance for each obs
+    e2 <- rep(rnorm(g), each=n/g) # variance within cluster
+    data$clu <- rep(1:g, each=n/g) # cluster id
+    e <- e1 + e2 # total error term
+    data$y <- b0 + b1*data$x1 + e # dependent variable
 
-  print(i)
+    # Run model
+    reg <- lm(y~x1, data) # OLS
 
-  # Generate data
-  e1 <- rnorm(n) # variance for each obs
-  e2 <- rep(rnorm(g), each=n/g) # variance within cluster
-  data$clu <- rep(1:g, each=n/g) # cluster id
-  e <- e1 + e2 # total error term
-  data$y <- b0 + b1*data$x1 + e # dependent variable
+    # Get coefficients
+    b <- coef(reg)
 
-  # Run model
-  reg <- lm(y~x1, data) # OLS
+    # Get SEs with different approaches
+    se.canned <- sqrt(diag(vcov(reg))) # i.i.d errors
+    se.clu    <- sqrt(diag(cluster.vcov(reg, data$clu))) # clustered errors
 
-  # Get coefficients
-  b <- coef(reg)
+    # Export
+    o <- c(b, se.canned, se.clu)
+    names(o) <- paste(rep(c("b.ols","se.ols","se.ols.clu"), each=2), names(o))
+    o
 
-  # Get SEs with different approaches
-  se.canned <- sqrt(diag(vcov(reg))) # i.i.d errors
-  se.clu    <- sqrt(diag(cluster.vcov(reg, data$clu))) # clustered errors
+  })
 
-  # Export
-  o <- c(b, se.canned, se.clu)
-  names(o) <- paste(rep(c("b.ols","se.ols","se.ols.clu"), each=2), names(o))
-  o
+  out <- do.call("rbind", out)
+
+  head(out)
+
+  mean(out[,6]) / sd(out[,2])
 
 })
-out <- do.call("rbind", out)
-head(out)
 
-mean(out[,6]) / sd(out[,2])
+
+
+
+
+
 
 
