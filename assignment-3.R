@@ -1,6 +1,11 @@
 
 # Assignment 3: Clustered SE's and Monte Carlo Simulation
 
+# 0. Table of contents ---------------------------------------------------------
+
+# 1. Set up work space
+# 2. Run Monte Carlo simulation
+# 3. Create plot of MC simulation and clusters
 
 # 1. ---------------------------------------------------------------------------
 
@@ -77,15 +82,38 @@ df
 # each column represents obs 100,200,500,1000,10000
 # each row represents clusters 2,4,5,10,20,25,50,100
 
-plot(df[j,], df[,i])
+# 3. ---------------------------------------------------------------------------
+
+# choose colors
+
+display.brewer.all() # choose YlGnBu
+colors <- c("#C7E9B4","#7FCDBB","#41B6C4", "#2C7FB8", "#253494")
+plot(1:5, col = colors, cex=5, pch = 16) #Shows color interpolation
+
+# plot ratio values
+
+par(mar =c(5,4,4,2))
+plot(df$X1, type = "n", xaxt = "n", yaxt = "n", #create a blank plot
+     xlab = "Number of clusters", ylim = c(0,1.1),
+     ylab = "Standard Err est. / Std Dev of sampling dist.",
+     main = "How many clusters do you need?")
+abline(h=1.0, lty = 3)
+axis(1, at = c(1,2,3,4,5,6,7,8), labels = as.character(g))
+axis(2, las = 2, at = seq(0.0, 1.2,0.2))
+
+#create loop to put data in plot
+lapply(1:5, function(n){
+  lines(df[,n], col = colors[n], lwd =2)
+  points(df[,n], pch = 16, col = colors[n])
+})
+
+# add legend
+legend("bottomright", legend = n, lwd=1, pch=16, col= colors,
+       title="Number of observations", cex = 0.75)
 
 
 
 
 
 
-
-
-
-
-
+# The end
