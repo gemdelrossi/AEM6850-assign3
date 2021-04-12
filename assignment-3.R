@@ -90,6 +90,10 @@ display.brewer.all() # choose YlGnBu
 colors <- c("#C7E9B4","#7FCDBB","#41B6C4", "#2C7FB8", "#253494")
 plot(1:5, col = colors, cex=5, pch = 16) #Shows color interpolation
 
+# write to disk
+
+png("clusters.png", width=1000, height=800, pointsize=20, bg="transparent", type="windows")
+
 # plot ratio values
 
 par(mar =c(5,4,4,2))
@@ -109,11 +113,8 @@ lapply(1:5, function(n){
 
 # add legend
 legend("bottomright", legend = n, lwd=1, pch=16, col= colors,
-       title="Number of observations", cex = 0.75)
+       title="Number of observations")
 
-
-
-
-
+dev.off()
 
 # The end
