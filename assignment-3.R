@@ -1,13 +1,6 @@
 
 # Assignment 3: Clustered SE's and Monte Carlo Simulation
 
-# 0. Table of Contents ---------------------------------------------------------
-
-# 1. Download and install necessary packages
-# 2. Generate data
-
-# 4. Run Monte Carlo simulation
-# 5. Generate plot
 
 # 1. ---------------------------------------------------------------------------
 
@@ -26,58 +19,68 @@ rm(want, need)
 
 set.seed(123)
 r <-10^3 # monte carlo simulations
-g <- c(2) # vector of numbers of clusters
+n <- c(100, 200, 500, 10^3, 10^4) # sample sizes
+g <- c(2,4,5,10,20,25,50,100) # number of clusters
 
-# try and create a loop with vector of n observations
+# create empty data frame to fill with final ratio values
 
-n <- list(100, 200, 500, 10^3, 10^4) # list of number of observations
+df <- data.frame(matrix(ncol = 5, nrow = 8))
 
-obs_loop <- lapply(100, function(n) {
+# create for loop
 
-  # Generate regression
+for (i in 1:5) { # i is sample sizes (n)
+  for(j in 1:8) {# j is clusters (g)
 
-  b0 <- 1 # coefficient for intercept
-  b1 <- .1 # coefficient for x1
-  x1 <- rnorm(n) + rep(rnorm(g), each=n/g) # X that is correlated within clusters
-  data <- data.frame(x1=x1)
+    out <- lapply(1:r, function(x) { #monte carlo simulation
 
-  # Monte Carlo simulation
+      print(x)
 
-  out <- lapply(1:r, function(i) {
+      # Generate regression
 
-    print(i)
-    n<-100
-    # Generate data
-    e1 <- rnorm(n) # variance for each obs
-    e2 <- rep(rnorm(g), each=n/g) # variance within cluster
-    data$clu <- rep(1:g, each=n/g) # cluster id
-    e <- e1 + e2 # total error term
-    data$y <- b0 + b1*data$x1 + e # dependent variable
+      b0 <- 1 # coefficient for intercept
+      b1 <- .1 # coefficient for x1
+      x1 <- rnorm(n[i]) + rep(rnorm(g[j]), each=n[i]/g[j]) # X correlated within clusters
+      data <- data.frame(x1=x1)
 
-    # Run model
-    reg <- lm(y~x1, data) # OLS
+      # Generate data
 
-    # Get coefficients
-    b <- coef(reg)
+      e1 <- rnorm(n[i]) # variance for each obs
+      e2 <- rep(rnorm(g[j]), each=n[i]/g[j]) # variance within cluster
+      data$clu <- rep(1:g[j], each=n[i]/g[j]) # cluster id
+      e <- e1 + e2 # total error term
+      data$y <- b0 + b1*data$x1 + e # dependent variable
 
-    # Get SEs with different approaches
-    se.canned <- sqrt(diag(vcov(reg))) # i.i.d errors
-    se.clu    <- sqrt(diag(cluster.vcov(reg, data$clu))) # clustered errors
+      # Run model
+      reg <- lm(y~x1, data) # OLS
 
-    # Export
-    o <- c(b, se.canned, se.clu)
-    names(o) <- paste(rep(c("b.ols","se.ols","se.ols.clu"), each=2), names(o))
-    o
+      # Get coefficients
+      b <- coef(reg)
 
-  })
+      # Get SE
+      se.clu <- sqrt(diag(cluster.vcov(reg, data$clu))) # clustered errors
 
-  out <- do.call("rbind", out)
+      # Export
+      o <- c(b, se.clu)
+      names(o) <- paste(rep(c("b.ols","se.ols.clu"), each=2), names(o))
+      o
+    })
 
-  head(out)
+    out <- do.call("rbind", out)
 
-  mean(out[,6]) / sd(out[,2])
+    # populate ratio data frame
 
-})
+    df[j,i]<- mean(out[,4]) / sd(out[,2]) # SE estimate / std error of sampling dist.
+  }
+}
+
+df
+# each column represents obs 100,200,500,1000,10000
+# each row represents clusters 2,4,5,10,20,25,50,100
+
+plot(df[j,], df[,i])
+
+
+
 
 
 
